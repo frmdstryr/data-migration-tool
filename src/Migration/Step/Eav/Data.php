@@ -278,12 +278,16 @@ class Data implements StageInterface, RollbackInterface
 
         $recordsToSave = $destinationDocument->getRecords();
         foreach ($destinationRecords as $recordData) {
+            $key = $destinationRecord->getValue('entity_type_id');
+            if (!isset($this->mapEntityTypeIdsDestOldNew[$key])) {
+                continue;
+            }
             /** @var Record $destinationRecord */
             $destinationRecord = $this->factory->create(['document' => $destinationDocument, 'data' => $recordData]);
             $destinationRecord->setValue('attribute_set_id', null);
             $destinationRecord->setValue(
                 'entity_type_id',
-                $this->mapEntityTypeIdsDestOldNew[$destinationRecord->getValue('entity_type_id')]
+                $this->mapEntityTypeIdsDestOldNew[$key]
             );
             $recordsToSave->addRecord($destinationRecord);
         }
@@ -657,10 +661,17 @@ class Data implements StageInterface, RollbackInterface
         }
         foreach ($this->initialData->getAttributes(ModelData::TYPE_SOURCE) as $recordSourceId => $recordSource) {
             foreach ($this->initialData->getAttributes(ModelData::TYPE_DEST) as $recordDestId => $recordDest) {
-                $sourceEntityTypeCode = $this->initialData->getEntityTypes(ModelData::TYPE_SOURCE)
-                [$recordSource['entity_type_id']]['entity_type_code'];
-                $destinationEntityTypeCode = $this->initialData->getEntityTypes(ModelData::TYPE_DEST)
-                [$recordDest['entity_type_id']]['entity_type_code'];
+                $sourceTypes = $this->initialData->getEntityTypes(ModelData::TYPE_SOURCE);
+                $destTypes = $this->initialData->getEntityTypes(ModelData::TYPE_DEST);
+                $sourceEntityTypeId = $recordSource['entity_type_id'];
+                $destEntityTypeId = $recordDest['entity_type_id'];
+                if (!isset($sourceTypes[$sourceEntityTypeId]) ||
+                    !isset($destTypes[$destEntityTypeId])) {
+                    continue;
+                }
+
+                $sourceEntityTypeCode = $sourceTypes[$sourceEntityTypeId]['entity_type_code'];
+                $destinationEntityTypeCode = $destTypes[$destEntityTypeId]['entity_type_code'];
                 if ($recordSource['attribute_code'] == $recordDest['attribute_code']
                     && $sourceEntityTypeCode == $destinationEntityTypeCode
                 ) {
