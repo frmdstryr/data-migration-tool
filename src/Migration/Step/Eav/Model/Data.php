@@ -282,9 +282,14 @@ class Data
         $defaultAttributes = [];
         $entityTypesSource = $this->initialData->getEntityTypes(self::TYPE_SOURCE);
         $entityTypesDest = $this->initialData->getEntityTypes(self::TYPE_DEST);
+
         foreach ($this->initialData->getAttributes(self::TYPE_DEST) as $id => $attribute) {
+            $key = $attribute['entity_type_id'];
+            if (!isset($entityTypesDest[$key])) {
+                continue;
+            }
             $defaultAttributes[$id] =
-                $entityTypesDest[$attribute['entity_type_id']]['entity_type_code']
+                $entityTypesDest[$key]['entity_type_code']
                 . '--'
                 . $attribute['attribute_code'];
         }
@@ -292,8 +297,14 @@ class Data
             $this->initialData->getAttributes(self::TYPE_SOURCE)
         );
         foreach ($sourceAttributes as $id => $attribute) {
+            $key = $attribute['entity_type_id'];
+            if (!isset($entityTypesSource[$key])) {
+                // HACK: How does this happen?
+                $sourceAttributes[$id] = "unknown--".$attribute['attribute_code'];
+                continue;
+            }
             $sourceAttributes[$id] =
-                $entityTypesSource[$attribute['entity_type_id']]['entity_type_code']
+                $entityTypesSource[$key]['entity_type_code']
                 . '--'
                 . $attribute['attribute_code'];
         }
